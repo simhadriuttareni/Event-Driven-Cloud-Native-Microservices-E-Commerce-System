@@ -1,165 +1,259 @@
-# Cloud-Native Microservices E-Commerce System
+# Event-Driven Microservices Platform
 
-A production-style **cloud-native microservices-based e-commerce backend system** built using **Spring Boot 3** and **Spring Cloud**, focusing on scalability, service discovery, centralized configuration, and clean architecture.
+A production-style event-driven microservices platform built using Spring Boot, Apache Kafka, Redis, and Docker, focusing on asynchronous communication, fault tolerance, distributed processing, and scalable backend architecture.
 
-This project demonstrates real-world backend engineering concepts used in modern distributed systems.
+This project demonstrates real-world backend engineering practices used in modern distributed systems where services communicate through events rather than direct synchronous calls.
 
 ---
 
 ## 🚀 Architecture Overview
 
-The system follows a **microservices architecture** with centralized configuration and service discovery.
+The system follows an event-driven microservices architecture where business workflows are coordinated through Kafka events.
 
-### Core Components
-- **API Gateway** – Single entry point for all client requests
-- **Discovery Server (Eureka)** – Service registration and discovery
-- **Config Server** – Centralized external configuration management
-- **Product Service** – Product catalog management
-- **Inventory Service** – Inventory availability and stock validation
-- **Order Service** – Order placement (extensible)
-- **Payment Service** – Payment handling (extensible)
+### Core Services
+
+* **Order Service** – Creates and manages customer orders
+* **Inventory Service** – Validates and updates product stock
+* **Payment Service** – Handles payment processing and transaction status
+* **Apache Kafka** – Event streaming platform for asynchronous communication
+* **Redis** – Distributed caching layer for frequently accessed data
+* **Docker** – Containerized deployment for consistency across environments
 
 ---
 
 ## 🧱 Tech Stack
 
-- **Java 17**
-- **Spring Boot 3**
-- **Spring Cloud 2023**
-  - Eureka Discovery Server
-  - Spring Cloud Config
-  - API Gateway
-- **Spring Data JPA**
-- **PostgreSQL**
-- **WebClient** (Inter-service communication)
-- **Maven**
-- **Git & GitHub**
+* Java 17
+* Spring Boot 3
+* Spring Data JPA
+* Apache Kafka
+* Redis
+* PostgreSQL
+* Docker
+* Maven
+* Git & GitHub
 
 ---
 
-## 📦 Services & Ports
+## 🔄 Event-Driven Workflow
 
-| Service            | Port |
-|--------------------|------|
-| Config Server      | 8888 |
-| Discovery Server   | 8761 |
-| API Gateway        | 8080 |
-| Product Service    | 8081 |
-| Inventory Service  | 8082 |
-| Order Service      | 8083 |
-| Payment Service    | 8084 |
+### Order Placement Flow
+
+1. Customer places an order.
+2. Order Service publishes an `OrderCreated` event.
+3. Inventory Service consumes the event and validates stock availability.
+4. Inventory Service publishes an `InventoryReserved` event.
+5. Payment Service consumes the event and processes payment.
+6. Payment Service publishes either:
+
+   * `PaymentCompleted`
+   * `PaymentFailed`
+7. Order Service updates final order status accordingly.
+
+This asynchronous workflow removes tight coupling between services and improves scalability.
 
 ---
 
-## 🔁 Inter-Service Communication
+## ⚡ Kafka Event Architecture
 
-- **Product Service → Inventory Service**
-- Implemented using **Spring WebClient**
-- Inventory availability is validated before product-related operations
-- Fully service-discovery based (no hardcoded URLs)
+### Published Events
+
+* OrderCreated
+* InventoryReserved
+* InventoryRejected
+* PaymentCompleted
+* PaymentFailed
+
+### Kafka Features Implemented
+
+* Event Producers
+* Event Consumers
+* Consumer Groups
+* Topic-Based Messaging
+* Event Serialization
+* Asynchronous Processing
+
+---
+
+## 🛡 Fault Tolerance Features
+
+### Retry Mechanism
+
+Implemented retry handling for transient failures during event consumption.
+
+### Idempotency Handling
+
+Duplicate events are safely ignored to prevent:
+
+* Duplicate payments
+* Duplicate inventory updates
+* Inconsistent order states
+
+### Reliable Event Processing
+
+Designed to ensure eventual consistency across distributed services.
+
+---
+
+## ⚡ Redis Caching
+
+Redis is used to improve API performance by caching frequently accessed data such as:
+
+* Product information
+* Inventory availability
+* Order lookup results
+
+### Benefits
+
+* Reduced database load
+* Faster API response times
+* Improved scalability
+
+---
+
+## 🐳 Docker Containerization
+
+All services are containerized using Docker.
+
+### Benefits
+
+* Consistent deployment environments
+* Simplified service startup
+* Easy scaling and orchestration readiness
+* Local development parity with production
 
 ---
 
 ## 🗄 Database Design
 
-- Each microservice uses **its own database schema**
-- **PostgreSQL** as the relational database
-- JPA + Hibernate for ORM
-- Schema auto-managed using `spring.jpa.hibernate.ddl-auto=update`
+### Database-per-Service Pattern
+
+Each microservice maintains its own data ownership.
+
+#### Order Database
+
+* Orders
+* Order Status
+
+#### Inventory Database
+
+* Products
+* Stock Quantities
+
+#### Payment Database
+
+* Transactions
+* Payment Status
+
+### Persistence Layer
+
+* Spring Data JPA
+* Hibernate ORM
+* PostgreSQL
 
 ---
 
-## ⚙️ How to Run the Project (Local)
+## ⚙️ How to Run the Project
 
 ### Prerequisites
-- Java 17
-- Maven
-- PostgreSQL
-- Git
 
-### Step-by-Step Startup Order
+* Java 17
+* Maven
+* Docker
+* PostgreSQL
+* Apache Kafka
+* Redis
 
-1. **Start Config Server**
-   ```bash
-   cd config-server
-   mvn spring-boot:run
-Start Discovery Server
+### Start Infrastructure
 
-cd discovery-server
+```bash
+docker-compose up -d
+```
+
+### Start Services
+
+```bash
+cd order-service
 mvn spring-boot:run
+```
 
-
-Start API Gateway
-
-cd api-gateway
-mvn spring-boot:run
-
-
-Start Microservices
-
-cd product-service
-mvn spring-boot:run
-
+```bash
 cd inventory-service
 mvn spring-boot:run
+```
 
-🔍 Verification
+```bash
+cd payment-service
+mvn spring-boot:run
+```
 
-Eureka Dashboard:
-👉 http://localhost:8761
+---
 
-Health Check:
+## 🔍 Sample Event Flow
 
-GET /actuator/health
+```text
+Order Created
+      │
+      ▼
+Kafka Topic
+      │
+      ▼
+Inventory Service
+      │
+      ▼
+Inventory Reserved
+      │
+      ▼
+Kafka Topic
+      │
+      ▼
+Payment Service
+      │
+      ▼
+Payment Completed
+      │
+      ▼
+Order Status Updated
+```
 
+---
 
-Inventory Check API:
+## 🧠 Key Engineering Highlights
 
-GET /api/inventory/{productName}
+* Event-Driven Architecture
+* Apache Kafka Messaging
+* Distributed Microservices Design
+* Retry Mechanisms
+* Idempotent Event Processing
+* Eventual Consistency Pattern
+* Redis Caching
+* Docker Containerization
+* Database-per-Service Architecture
+* Production-Ready Project Structure
 
-🧪 Sample API Response
-{
-  "productName": "MacBook Pro",
-  "available": true
-}
+---
 
-🧠 Key Engineering Highlights
+## 📌 Future Enhancements
 
-Centralized configuration using Spring Cloud Config
+* API Gateway
+* Eureka Service Discovery
+* Spring Cloud Config
+* Circuit Breaker (Resilience4j)
+* Distributed Tracing (Zipkin)
+* JWT Authentication
+* Kubernetes Deployment
+* AWS Deployment Pipeline
+* Saga Pattern Implementation
 
-Service discovery using Eureka
+---
 
-Clean layered architecture (Controller, Service, Repository)
+## 👨‍💻 Author
 
-Inter-service communication using WebClient
+**Simhadri Uttareni**
+Backend Engineer | Java | Spring Boot | Microservices | Kafka
 
-Database-per-service design
+GitHub: https://github.com/simhadriuttareni
 
-Production-grade project structure
-
-Git best practices followed
-
-📌 Future Enhancements
-
-Docker & Docker Compose
-
-Kafka for event-driven communication
-
-Circuit Breaker (Resilience4j)
-
-Distributed tracing (Zipkin)
-
-JWT-based authentication
-
-Deployment on AWS
-
-👨‍💻 Author
-
-Simhadri Uttareni
-Backend Engineer | Java | Spring Boot | Microservices
-
-GitHub:
-👉 https://github.com/simhadriuttareni
+---
 
 ⭐ If you find this project useful, feel free to star the repository.
-
